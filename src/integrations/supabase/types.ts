@@ -14,7 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      books: {
+        Row: {
+          author: string | null
+          bookmarks: Json | null
+          cover_gradient: string[]
+          cover_image: string | null
+          created_at: string
+          current_page: number | null
+          data: string
+          genre: string | null
+          id: string
+          name: string
+          size: number
+          total_pages: number | null
+          type: string
+          updated_at: string
+          user_id: string
+          year: number | null
+        }
+        Insert: {
+          author?: string | null
+          bookmarks?: Json | null
+          cover_gradient?: string[]
+          cover_image?: string | null
+          created_at?: string
+          current_page?: number | null
+          data: string
+          genre?: string | null
+          id?: string
+          name: string
+          size?: number
+          total_pages?: number | null
+          type: string
+          updated_at?: string
+          user_id: string
+          year?: number | null
+        }
+        Update: {
+          author?: string | null
+          bookmarks?: Json | null
+          cover_gradient?: string[]
+          cover_image?: string | null
+          created_at?: string
+          current_page?: number | null
+          data?: string
+          genre?: string | null
+          id?: string
+          name?: string
+          size?: number
+          total_pages?: number | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+          year?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
