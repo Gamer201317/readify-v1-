@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
-import type { Book, Bookmark } from "@/lib/bookStore";
+import type { Book, Bookmark } from "@/hooks/useBooks";
 import { Bookmark as BookmarkIcon, BookmarkCheck } from "lucide-react";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
