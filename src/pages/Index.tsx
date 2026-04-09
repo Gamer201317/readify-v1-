@@ -1,10 +1,10 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import DropZone from "@/components/DropZone";
 import BookCard from "@/components/BookCard";
 import PdfViewer from "@/components/PdfViewer";
 import EpubViewer from "@/components/EpubViewer";
-import { type Book, loadBooks, saveBooks, addBook, getTotalSize } from "@/lib/bookStore";
+import { type Book, loadBooks, saveBooks, addBook, getTotalSize, getTheme, setTheme as saveThemeToStorage } from "@/lib/bookStore";
 import { Search } from "lucide-react";
 
 export default function Index() {
@@ -13,7 +13,22 @@ export default function Index() {
   const [search, setSearch] = useState('');
   const [viewing, setViewing] = useState<Book | null>(null);
   const [toast, setToast] = useState('');
+  const [theme, setThemeState] = useState<'dark' | 'light'>(getTheme);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Apply theme class
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
+
+  const handleThemeChange = (t: 'dark' | 'light') => {
+    setThemeState(t);
+    saveThemeToStorage(t);
+  };
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -57,6 +72,36 @@ export default function Index() {
     });
   }, [viewing?.id]);
 
+  const handleBookmark = useCallback((page: number) => {
+    if (!viewing) return;
+    const bookmark = { id: crypto.randomUUID(), page, label: `Pagina ${page}`, createdAt: Date.now() };
+    setBooks(prev => {
+      const updated = prev.map(b =>
+        b.id === viewing.id ? { ...b, bookmarks: [...(b.bookmarks || []), bookmark] } : b
+      );
+      saveBooks(updated);
+      // Update viewing reference
+      const updatedBook = updated.find(b => b.id === viewing.id);
+      if (updatedBook) setViewing(updatedBook);
+      return updated;
+    });
+    showToast('Bladwijzer toegevoegd');
+  }, [viewing]);
+
+  const handleRemoveBookmark = useCallback((bmId: string) => {
+    if (!viewing) return;
+    setBooks(prev => {
+      const updated = prev.map(b =>
+        b.id === viewing.id ? { ...b, bookmarks: (b.bookmarks || []).filter(bm => bm.id !== bmId) } : b
+      );
+      saveBooks(updated);
+      const updatedBook = updated.find(b => b.id === viewing.id);
+      if (updatedBook) setViewing(updatedBook);
+      return updated;
+    });
+    showToast('Bladwijzer verwijderd');
+  }, [viewing]);
+
   const filtered = books.filter(b =>
     b.name.toLowerCase().includes(search.toLowerCase())
   );
@@ -65,10 +110,9 @@ export default function Index() {
 
   return (
     <div className="flex min-h-screen bg-background font-sans relative overflow-hidden">
-      <Sidebar page={page} onPageChange={setPage} storageSize={getTotalSize(books)} />
+      <Sidebar page={page} onPageChange={setPage} storageSize={getTotalSize(books)} theme={theme} onThemeChange={handleThemeChange} />
 
       <div className="flex-1 flex flex-col overflow-hidden relative z-[2]">
-        {/* Topbar */}
         <div className="px-5 py-4 bg-background/75 border-b border-border flex items-center gap-2.5">
           <div className="flex-1 relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-tx3" />
@@ -95,7 +139,6 @@ export default function Index() {
           />
         </div>
 
-        {/* Content */}
         <div className="flex-1 p-5 overflow-y-auto">
           {page === 'home' ? (
             <>
@@ -154,15 +197,13 @@ export default function Index() {
         </div>
       </div>
 
-      {/* Viewer */}
       {viewing && viewing.type === 'pdf' && (
-        <PdfViewer book={viewing} onClose={() => setViewing(null)} onProgress={handleProgress} />
+        <PdfViewer book={viewing} onClose={() => setViewing(null)} onProgress={handleProgress} onBookmark={handleBookmark} onRemoveBookmark={handleRemoveBookmark} />
       )}
       {viewing && viewing.type === 'epub' && (
         <EpubViewer book={viewing} onClose={() => setViewing(null)} />
       )}
 
-      {/* Toast */}
       <div className={`absolute bottom-4 right-4 bg-primary text-primary-foreground px-3.5 py-2 rounded-lg text-[13px] font-medium z-30 transition-opacity ${toast ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         {toast}
       </div>

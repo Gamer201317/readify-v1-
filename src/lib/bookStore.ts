@@ -1,3 +1,10 @@
+export interface Bookmark {
+  id: string;
+  page: number;
+  label: string;
+  createdAt: number;
+}
+
 export interface Book {
   id: string;
   name: string;
@@ -8,6 +15,7 @@ export interface Book {
   currentPage?: number;
   totalPages?: number;
   coverGradient: [string, string];
+  bookmarks?: Bookmark[];
 }
 
 const GRADS: [string, string][] = [
@@ -26,6 +34,7 @@ function randomGrad(): [string, string] {
 }
 
 const STORAGE_KEY = 'readify_books';
+const THEME_KEY = 'readify_theme';
 
 export function loadBooks(): Book[] {
   try {
@@ -38,6 +47,14 @@ export function loadBooks(): Book[] {
 
 export function saveBooks(books: Book[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(books));
+}
+
+export function getTheme(): 'dark' | 'light' {
+  return (localStorage.getItem(THEME_KEY) as 'dark' | 'light') || 'dark';
+}
+
+export function setTheme(theme: 'dark' | 'light') {
+  localStorage.setItem(THEME_KEY, theme);
 }
 
 export function addBook(file: File): Promise<Book> {
@@ -57,6 +74,7 @@ export function addBook(file: File): Promise<Book> {
         currentPage: 1,
         totalPages: undefined,
         coverGradient: randomGrad(),
+        bookmarks: [],
       };
       resolve(book);
     };
