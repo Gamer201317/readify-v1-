@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import ePub from "epubjs";
 import type { Book as BookType } from "@/lib/bookStore";
-import type Section from "epubjs/types/section";
 
 interface EpubViewerProps {
   book: BookType;
@@ -13,6 +12,8 @@ export default function EpubViewer({ book, onClose }: EpubViewerProps) {
   const renditionRef = useRef<any>(null);
   const [title, setTitle] = useState(book.name);
   const [loading, setLoading] = useState(true);
+
+  const isDark = document.documentElement.classList.contains('dark');
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -26,6 +27,17 @@ export default function EpubViewer({ book, onClose }: EpubViewerProps) {
         spread: 'none',
       });
       renditionRef.current = rendition;
+
+      // Apply theme colors for dark mode
+      if (isDark) {
+        rendition.themes.default({
+          body: { color: '#f0ebe3 !important', background: 'transparent !important' },
+          'p, span, div, h1, h2, h3, h4, h5, h6, li, a, em, strong, td, th': {
+            color: '#f0ebe3 !important',
+          },
+        });
+      }
+
       rendition.display();
       setLoading(false);
 
@@ -35,10 +47,20 @@ export default function EpubViewer({ book, onClose }: EpubViewerProps) {
     });
 
     return () => { epubBook.destroy(); };
-  }, [book.data]);
+  }, [book.data, isDark]);
 
   const prev = () => renditionRef.current?.prev();
   const next = () => renditionRef.current?.next();
+
+  // Arrow key navigation
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') prev();
+      if (e.key === 'ArrowRight') next();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   const handleDownload = () => {
     const a = document.createElement('a');
