@@ -1,4 +1,4 @@
-import type { Book } from "@/lib/bookStore";
+import type { Book } from "@/hooks/useBooks";
 
 interface BookCardProps {
   book: Book;

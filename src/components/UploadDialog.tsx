@@ -58,7 +58,6 @@ export default function UploadDialog({ file, base64, onConfirm, onCancel }: Uplo
         </div>
 
         <div className="p-4 space-y-3">
-          {/* Cover preview */}
           <div className="flex gap-4">
             <div className="w-20 h-28 rounded-lg overflow-hidden border border-border shrink-0 bg-muted flex items-center justify-center">
               {loading ? (
@@ -66,9 +65,7 @@ export default function UploadDialog({ file, base64, onConfirm, onCancel }: Uplo
               ) : coverPreview ? (
                 <img src={coverPreview} alt="Cover" className="w-full h-full object-cover" />
               ) : (
-                <div className="text-[10px] text-tx3 text-center px-1">
-                  {ext?.toUpperCase()}
-                </div>
+                <div className="text-[10px] text-tx3 text-center px-1">{ext?.toUpperCase()}</div>
               )}
             </div>
             <div className="flex-1 space-y-2">
@@ -114,27 +111,15 @@ export default function UploadDialog({ file, base64, onConfirm, onCancel }: Uplo
                 className="w-full border border-border rounded-lg py-1.5 px-2.5 text-[13px] bg-background text-foreground focus:outline-none focus:border-primary transition-colors"
               >
                 <option value="">Kies genre…</option>
-                {GENRES.map(g => (
-                  <option key={g} value={g}>{g}</option>
-                ))}
+                {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
               </select>
             </div>
           </div>
         </div>
 
         <div className="flex justify-end gap-2 px-4 py-3 border-t border-border">
-          <button
-            onClick={onCancel}
-            className="text-[12px] px-3 py-1.5 border border-border rounded-lg text-tx2 hover:bg-primary/10 transition-all"
-          >
-            Annuleren
-          </button>
-          <button
-            onClick={handleSubmit}
-            className="text-[12px] px-4 py-1.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-or-dark transition-all"
-          >
-            Toevoegen
-          </button>
+          <button onClick={onCancel} className="text-[12px] px-3 py-1.5 border border-border rounded-lg text-tx2 hover:bg-primary/10 transition-all">Annuleren</button>
+          <button onClick={handleSubmit} className="text-[12px] px-4 py-1.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-or-dark transition-all">Toevoegen</button>
         </div>
       </div>
     </div>

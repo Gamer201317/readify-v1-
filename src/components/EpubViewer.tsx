@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import ePub from "epubjs";
-import type { Book as BookType } from "@/lib/bookStore";
+import type { Book as BookType } from "@/hooks/useBooks";
 
 interface EpubViewerProps {
   book: BookType;
