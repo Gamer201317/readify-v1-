@@ -4,19 +4,20 @@ import DropZone from "@/components/DropZone";
 import BookCard from "@/components/BookCard";
 import PdfViewer from "@/components/PdfViewer";
 import EpubViewer from "@/components/EpubViewer";
-import { type Book, loadBooks, saveBooks, addBook, getTotalSize, getTheme, setTheme as saveThemeToStorage } from "@/lib/bookStore";
+import UploadDialog from "@/components/UploadDialog";
+import { type Book, loadBooks, saveBooks, createBook, fileToBase64, getTotalSize, getTheme, setTheme as saveThemeToStorage } from "@/lib/bookStore";
 import { Search } from "lucide-react";
 
 export default function Index() {
   const [books, setBooks] = useState<Book[]>(loadBooks);
-  const [page, setPage] = useState<'home' | 'reading'>('home');
+  const [page, setPage] = useState<'home' | 'reading' | 'catalog'>('home');
   const [search, setSearch] = useState('');
   const [viewing, setViewing] = useState<Book | null>(null);
   const [toast, setToast] = useState('');
   const [theme, setThemeState] = useState<'dark' | 'light'>(getTheme);
+  const [uploadQueue, setUploadQueue] = useState<{ file: File; base64: string }[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // Apply theme class
   useEffect(() => {
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
@@ -36,24 +37,40 @@ export default function Index() {
   };
 
   const handleFiles = useCallback(async (files: FileList) => {
-    const newBooks: Book[] = [];
+    // Process files one at a time through the dialog
+    const queue: { file: File; base64: string }[] = [];
     for (const file of Array.from(files)) {
       const ext = file.name.split('.').pop()?.toLowerCase();
       if (ext !== 'pdf' && ext !== 'epub') continue;
       try {
-        const book = await addBook(file);
-        newBooks.push(book);
+        const base64 = await fileToBase64(file);
+        queue.push({ file, base64 });
       } catch (e) {
-        console.error('Failed to load file:', e);
+        console.error('Failed to read file:', e);
       }
     }
-    if (newBooks.length) {
-      const updated = [...books, ...newBooks];
-      setBooks(updated);
-      saveBooks(updated);
-      showToast(`${newBooks.length} boek(en) toegevoegd!`);
+    if (queue.length) setUploadQueue(queue);
+  }, []);
+
+  const handleUploadConfirm = (metadata: { name: string; year?: number; genre?: string; author?: string }, coverImage?: string) => {
+    const current = uploadQueue[0];
+    if (!current) return;
+    const book = createBook(current.file, current.base64, metadata, coverImage);
+    const updated = [...books, book];
+    setBooks(updated);
+    saveBooks(updated);
+
+    const remaining = uploadQueue.slice(1);
+    setUploadQueue(remaining);
+    if (remaining.length === 0) {
+      showToast('Boek toegevoegd!');
     }
-  }, [books]);
+  };
+
+  const handleUploadCancel = () => {
+    const remaining = uploadQueue.slice(1);
+    setUploadQueue(remaining);
+  };
 
   const handleDelete = (id: string) => {
     const updated = books.filter(b => b.id !== id);
@@ -72,15 +89,14 @@ export default function Index() {
     });
   }, [viewing?.id]);
 
-  const handleBookmark = useCallback((page: number) => {
+  const handleBookmark = useCallback((pg: number) => {
     if (!viewing) return;
-    const bookmark = { id: crypto.randomUUID(), page, label: `Pagina ${page}`, createdAt: Date.now() };
+    const bookmark = { id: crypto.randomUUID(), page: pg, label: `Pagina ${pg}`, createdAt: Date.now() };
     setBooks(prev => {
       const updated = prev.map(b =>
         b.id === viewing.id ? { ...b, bookmarks: [...(b.bookmarks || []), bookmark] } : b
       );
       saveBooks(updated);
-      // Update viewing reference
       const updatedBook = updated.find(b => b.id === viewing.id);
       if (updatedBook) setViewing(updatedBook);
       return updated;
@@ -107,6 +123,10 @@ export default function Index() {
   );
 
   const readingBooks = books.filter(b => b.currentPage && b.currentPage > 1);
+
+  // Catalog: group by year
+  const catalogByYear = [...filtered].sort((a, b) => (b.year || 0) - (a.year || 0));
+  const years = Array.from(new Set(catalogByYear.map(b => b.year || 0)));
 
   return (
     <div className="flex min-h-screen bg-background font-sans relative overflow-hidden">
@@ -135,12 +155,12 @@ export default function Index() {
             accept=".pdf,.epub"
             multiple
             className="hidden"
-            onChange={e => e.target.files && handleFiles(e.target.files)}
+            onChange={e => { if (e.target.files) { handleFiles(e.target.files); e.target.value = ''; } }}
           />
         </div>
 
         <div className="flex-1 p-5 overflow-y-auto">
-          {page === 'home' ? (
+          {page === 'home' && (
             <>
               {books.length > 0 && (
                 <div className="grid grid-cols-3 gap-2.5 mb-6">
@@ -158,9 +178,7 @@ export default function Index() {
                   </div>
                 </div>
               )}
-
               <DropZone onFiles={handleFiles} />
-
               {filtered.length === 0 && books.length === 0 && (
                 <div className="text-center p-8 text-tx3">
                   <svg width="40" height="40" viewBox="0 0 40 40" fill="none" className="mx-auto mb-3">
@@ -171,26 +189,53 @@ export default function Index() {
                   <div className="text-[13px]">Upload je eerste PDF of EPUB hierboven</div>
                 </div>
               )}
-
               {filtered.length > 0 && (
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(130px,1fr))] gap-3.5">
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3.5">
                   {filtered.map(book => (
                     <BookCard key={book.id} book={book} onOpen={setViewing} onDelete={handleDelete} />
                   ))}
                 </div>
               )}
             </>
-          ) : (
+          )}
+
+          {page === 'reading' && (
             <>
               <div className="text-[15px] font-medium text-foreground mb-3">Aan het lezen</div>
               {readingBooks.length === 0 ? (
                 <div className="text-[13px] text-tx3 text-center p-8">Geen boeken in voortgang</div>
               ) : (
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(130px,1fr))] gap-3.5">
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3.5">
                   {readingBooks.map(book => (
                     <BookCard key={book.id} book={book} onOpen={setViewing} onDelete={handleDelete} />
                   ))}
                 </div>
+              )}
+            </>
+          )}
+
+          {page === 'catalog' && (
+            <>
+              <div className="text-[15px] font-medium text-foreground mb-3">Catalogus</div>
+              {filtered.length === 0 ? (
+                <div className="text-[13px] text-tx3 text-center p-8">Geen boeken gevonden</div>
+              ) : (
+                years.map(year => {
+                  const yearBooks = catalogByYear.filter(b => (b.year || 0) === year);
+                  return (
+                    <div key={year} className="mb-6">
+                      <div className="text-[13px] font-medium text-tx2 mb-2 flex items-center gap-2">
+                        <span className="text-primary">{year || 'Onbekend jaar'}</span>
+                        <span className="text-tx3">— {yearBooks.length} boek{yearBooks.length !== 1 ? 'en' : ''}</span>
+                      </div>
+                      <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3.5">
+                        {yearBooks.map(book => (
+                          <BookCard key={book.id} book={book} onOpen={setViewing} onDelete={handleDelete} />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </>
           )}
@@ -202,6 +247,15 @@ export default function Index() {
       )}
       {viewing && viewing.type === 'epub' && (
         <EpubViewer book={viewing} onClose={() => setViewing(null)} />
+      )}
+
+      {uploadQueue.length > 0 && (
+        <UploadDialog
+          file={uploadQueue[0].file}
+          base64={uploadQueue[0].base64}
+          onConfirm={handleUploadConfirm}
+          onCancel={handleUploadCancel}
+        />
       )}
 
       <div className={`absolute bottom-4 right-4 bg-primary text-primary-foreground px-3.5 py-2 rounded-lg text-[13px] font-medium z-30 transition-opacity ${toast ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>

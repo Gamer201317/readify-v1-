@@ -16,19 +16,36 @@ export default function BookCard({ book, onOpen, onDelete }: BookCardProps) {
       className="bg-foreground/[0.03] border border-border rounded-xl overflow-hidden cursor-pointer transition-all hover:border-primary/50 hover:-translate-y-0.5"
       onClick={() => onOpen(book)}
     >
-      <div
-        className="h-[140px] flex items-center justify-center text-[11px] font-medium p-2 text-center"
-        style={{
-          background: `linear-gradient(135deg, ${book.coverGradient[0]}, ${book.coverGradient[1]})`,
-        }}
-      >
-        <span className="text-foreground/90 drop-shadow-sm line-clamp-3 px-1">
-          {book.name}
+      <div className="h-[160px] overflow-hidden relative">
+        {book.coverImage ? (
+          <img src={book.coverImage} alt={book.name} className="w-full h-full object-cover" />
+        ) : (
+          <div
+            className="w-full h-full flex items-center justify-center text-[11px] font-medium p-2 text-center"
+            style={{
+              background: `linear-gradient(135deg, ${book.coverGradient[0]}, ${book.coverGradient[1]})`,
+            }}
+          >
+            <span className="text-foreground/90 drop-shadow-sm line-clamp-3 px-1">
+              {book.name}
+            </span>
+          </div>
+        )}
+        <span className="absolute top-1.5 right-1.5 text-[9px] px-1.5 py-0.5 rounded-md font-medium bg-black/50 text-white uppercase">
+          {book.type}
         </span>
       </div>
       <div className="p-2 px-2.5 pb-2.5">
         <div className="text-xs font-medium text-foreground truncate">{book.name}</div>
-        <div className="text-[11px] text-tx3 mt-0.5 uppercase">{book.type}</div>
+        {book.author && <div className="text-[11px] text-tx3 truncate">{book.author}</div>}
+        <div className="flex items-center gap-1.5 mt-0.5">
+          {book.year && <span className="text-[10px] text-tx3">{book.year}</span>}
+          {book.genre && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
+              {book.genre}
+            </span>
+          )}
+        </div>
         {progress > 0 && (
           <div className="h-[3px] bg-foreground/[0.08] rounded-sm mt-1.5">
             <div

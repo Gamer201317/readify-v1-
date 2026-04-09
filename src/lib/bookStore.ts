@@ -15,7 +15,11 @@ export interface Book {
   currentPage?: number;
   totalPages?: number;
   coverGradient: [string, string];
+  coverImage?: string; // base64 thumbnail of first page
   bookmarks?: Bookmark[];
+  year?: number;
+  genre?: string;
+  author?: string;
 }
 
 const GRADS: [string, string][] = [
@@ -57,30 +61,59 @@ export function setTheme(theme: 'dark' | 'light') {
   localStorage.setItem(THEME_KEY, theme);
 }
 
-export function addBook(file: File): Promise<Book> {
+export async function generatePdfCover(dataUrl: string): Promise<string> {
+  const pdfjsLib = await import('pdfjs-dist');
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+
+  const data = atob(dataUrl.split(',')[1]);
+  const arr = new Uint8Array(data.length);
+  for (let i = 0; i < data.length; i++) arr[i] = data.charCodeAt(i);
+
+  const pdf = await pdfjsLib.getDocument({ data: arr }).promise;
+  const page = await pdf.getPage(1);
+  const vp = page.getViewport({ scale: 0.5 });
+  const canvas = document.createElement('canvas');
+  canvas.width = vp.width;
+  canvas.height = vp.height;
+  const ctx = canvas.getContext('2d')!;
+  await page.render({ canvasContext: ctx, viewport: vp }).promise;
+  const coverImage = canvas.toDataURL('image/jpeg', 0.7);
+  pdf.destroy();
+  return coverImage;
+}
+
+export function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => {
-      const base64 = reader.result as string;
-      const ext = file.name.split('.').pop()?.toLowerCase();
-      const type = ext === 'epub' ? 'epub' : 'pdf';
-      const book: Book = {
-        id: crypto.randomUUID(),
-        name: file.name.replace(/\.(pdf|epub)$/i, ''),
-        type,
-        size: file.size,
-        data: base64,
-        addedAt: Date.now(),
-        currentPage: 1,
-        totalPages: undefined,
-        coverGradient: randomGrad(),
-        bookmarks: [],
-      };
-      resolve(book);
-    };
+    reader.onload = () => resolve(reader.result as string);
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+}
+
+export function createBook(
+  file: File,
+  base64: string,
+  metadata: { name: string; year?: number; genre?: string; author?: string },
+  coverImage?: string
+): Book {
+  const ext = file.name.split('.').pop()?.toLowerCase();
+  return {
+    id: crypto.randomUUID(),
+    name: metadata.name,
+    type: ext === 'epub' ? 'epub' : 'pdf',
+    size: file.size,
+    data: base64,
+    addedAt: Date.now(),
+    currentPage: 1,
+    totalPages: undefined,
+    coverGradient: randomGrad(),
+    coverImage,
+    bookmarks: [],
+    year: metadata.year,
+    genre: metadata.genre,
+    author: metadata.author,
+  };
 }
 
 export function formatSize(bytes: number): string {
