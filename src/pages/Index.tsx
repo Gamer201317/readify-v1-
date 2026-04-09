@@ -1,15 +1,33 @@
 import { useState, useCallback, useRef, useEffect } from "react";
+import { Navigate } from "react-router-dom";
 import Sidebar from "@/components/Sidebar";
 import DropZone from "@/components/DropZone";
 import BookCard from "@/components/BookCard";
 import PdfViewer from "@/components/PdfViewer";
 import EpubViewer from "@/components/EpubViewer";
 import UploadDialog from "@/components/UploadDialog";
-import { type Book, loadBooks, saveBooks, createBook, fileToBase64, getTotalSize, getTheme, setTheme as saveThemeToStorage } from "@/lib/bookStore";
-import { Search } from "lucide-react";
+import EasterEggOverlay from "@/components/EasterEggOverlay";
+import { useAuth } from "@/hooks/useAuth";
+import { useBooks, type Book } from "@/hooks/useBooks";
+import { useEasterEggs } from "@/hooks/useEasterEggs";
+import { fileToBase64, getTheme, setTheme as saveThemeToStorage } from "@/lib/bookStore";
+import { Search, LogOut } from "lucide-react";
+
+const GRADS: [string, string][] = [
+  ['#C2500A', '#F97316'], ['#7C3AED', '#A78BFA'], ['#059669', '#34D399'],
+  ['#DC2626', '#F87171'], ['#2563EB', '#60A5FA'], ['#D97706', '#FBBF24'],
+  ['#7C3AED', '#F472B6'], ['#0891B2', '#22D3EE'],
+];
+
+function randomGrad(): [string, string] {
+  return GRADS[Math.floor(Math.random() * GRADS.length)];
+}
 
 export default function Index() {
-  const [books, setBooks] = useState<Book[]>(loadBooks);
+  const { user, loading: authLoading, signOut } = useAuth();
+  const { books, loading: booksLoading, addBook, deleteBook, updateBook } = useBooks();
+  const { effect, handleLogoClick, checkSearchCommand } = useEasterEggs();
+
   const [page, setPage] = useState<'home' | 'reading' | 'catalog'>('home');
   const [search, setSearch] = useState('');
   const [viewing, setViewing] = useState<Book | null>(null);
@@ -19,118 +37,90 @@ export default function Index() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
 
-  const handleThemeChange = (t: 'dark' | 'light') => {
-    setThemeState(t);
-    saveThemeToStorage(t);
-  };
+  if (authLoading) {
+    return <div className="min-h-screen bg-background flex items-center justify-center"><div className="text-tx3 text-sm">Laden…</div></div>;
+  }
+  if (!user) return <Navigate to="/auth" replace />;
 
-  const showToast = (msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(''), 2500);
-  };
+  const handleThemeChange = (t: 'dark' | 'light') => { setThemeState(t); saveThemeToStorage(t); };
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 2500); };
 
-  const handleFiles = useCallback(async (files: FileList) => {
-    // Process files one at a time through the dialog
+  const handleFiles = async (files: FileList) => {
     const queue: { file: File; base64: string }[] = [];
     for (const file of Array.from(files)) {
       const ext = file.name.split('.').pop()?.toLowerCase();
       if (ext !== 'pdf' && ext !== 'epub') continue;
-      try {
-        const base64 = await fileToBase64(file);
-        queue.push({ file, base64 });
-      } catch (e) {
-        console.error('Failed to read file:', e);
-      }
+      try { queue.push({ file, base64: await fileToBase64(file) }); } catch {}
     }
     if (queue.length) setUploadQueue(queue);
-  }, []);
+  };
 
-  const handleUploadConfirm = (metadata: { name: string; year?: number; genre?: string; author?: string }, coverImage?: string) => {
+  const handleUploadConfirm = async (metadata: { name: string; year?: number; genre?: string; author?: string }, coverImage?: string) => {
     const current = uploadQueue[0];
     if (!current) return;
-    const book = createBook(current.file, current.base64, metadata, coverImage);
-    const updated = [...books, book];
-    setBooks(updated);
-    saveBooks(updated);
-
-    const remaining = uploadQueue.slice(1);
-    setUploadQueue(remaining);
-    if (remaining.length === 0) {
-      showToast('Boek toegevoegd!');
-    }
-  };
-
-  const handleUploadCancel = () => {
-    const remaining = uploadQueue.slice(1);
-    setUploadQueue(remaining);
-  };
-
-  const handleDelete = (id: string) => {
-    const updated = books.filter(b => b.id !== id);
-    setBooks(updated);
-    saveBooks(updated);
-    showToast('Boek verwijderd');
-  };
-
-  const handleProgress = useCallback((currentPage: number, totalPages: number) => {
-    setBooks(prev => {
-      const updated = prev.map(b =>
-        b.id === viewing?.id ? { ...b, currentPage, totalPages } : b
-      );
-      saveBooks(updated);
-      return updated;
+    const ext = current.file.name.split('.').pop()?.toLowerCase();
+    await addBook({
+      name: metadata.name,
+      type: (ext === 'epub' ? 'epub' : 'pdf') as 'pdf' | 'epub',
+      size: current.file.size,
+      data: current.base64,
+      coverGradient: randomGrad(),
+      coverImage,
+      bookmarks: [],
+      year: metadata.year,
+      genre: metadata.genre,
+      author: metadata.author,
+      currentPage: 1,
     });
-  }, [viewing?.id]);
+    const remaining = uploadQueue.slice(1);
+    setUploadQueue(remaining);
+    if (!remaining.length) showToast('Boek toegevoegd!');
+  };
 
-  const handleBookmark = useCallback((pg: number) => {
+  const handleUploadCancel = () => setUploadQueue(prev => prev.slice(1));
+
+  const handleDelete = async (id: string) => { await deleteBook(id); showToast('Boek verwijderd'); };
+
+  const handleProgress = async (currentPage: number, totalPages: number) => {
     if (!viewing) return;
-    const bookmark = { id: crypto.randomUUID(), page: pg, label: `Pagina ${pg}`, createdAt: Date.now() };
-    setBooks(prev => {
-      const updated = prev.map(b =>
-        b.id === viewing.id ? { ...b, bookmarks: [...(b.bookmarks || []), bookmark] } : b
-      );
-      saveBooks(updated);
-      const updatedBook = updated.find(b => b.id === viewing.id);
-      if (updatedBook) setViewing(updatedBook);
-      return updated;
-    });
+    const updated = await updateBook(viewing.id, { currentPage, totalPages });
+    if (updated) setViewing(updated);
+  };
+
+  const handleBookmark = async (pg: number) => {
+    if (!viewing) return;
+    const newBm = { id: crypto.randomUUID(), page: pg, label: `Pagina ${pg}`, createdAt: Date.now() };
+    const updated = await updateBook(viewing.id, { bookmarks: [...(viewing.bookmarks || []), newBm] });
+    if (updated) setViewing(updated);
     showToast('Bladwijzer toegevoegd');
-  }, [viewing]);
+  };
 
-  const handleRemoveBookmark = useCallback((bmId: string) => {
+  const handleRemoveBookmark = async (bmId: string) => {
     if (!viewing) return;
-    setBooks(prev => {
-      const updated = prev.map(b =>
-        b.id === viewing.id ? { ...b, bookmarks: (b.bookmarks || []).filter(bm => bm.id !== bmId) } : b
-      );
-      saveBooks(updated);
-      const updatedBook = updated.find(b => b.id === viewing.id);
-      if (updatedBook) setViewing(updatedBook);
-      return updated;
-    });
+    const updated = await updateBook(viewing.id, { bookmarks: (viewing.bookmarks || []).filter(bm => bm.id !== bmId) });
+    if (updated) setViewing(updated);
     showToast('Bladwijzer verwijderd');
-  }, [viewing]);
+  };
 
-  const filtered = books.filter(b =>
-    b.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const handleSearchChange = (val: string) => {
+    setSearch(val);
+    checkSearchCommand(val);
+  };
 
+  const filtered = books.filter(b => b.name.toLowerCase().includes(search.toLowerCase()));
   const readingBooks = books.filter(b => b.currentPage && b.currentPage > 1);
-
-  // Catalog: group by year
   const catalogByYear = [...filtered].sort((a, b) => (b.year || 0) - (a.year || 0));
   const years = Array.from(new Set(catalogByYear.map(b => b.year || 0)));
+  const totalSize = books.reduce((s, b) => s + b.size, 0);
+  const sizeStr = totalSize < 1024 ? totalSize + ' B' : totalSize < 1024 * 1024 ? (totalSize / 1024).toFixed(1) + ' KB' : (totalSize / (1024 * 1024)).toFixed(1) + ' MB';
 
   return (
     <div className="flex min-h-screen bg-background font-sans relative overflow-hidden">
-      <Sidebar page={page} onPageChange={setPage} storageSize={getTotalSize(books)} theme={theme} onThemeChange={handleThemeChange} />
+      <EasterEggOverlay effect={effect} />
+      <Sidebar page={page} onPageChange={setPage} storageSize={sizeStr} theme={theme} onThemeChange={handleThemeChange} onLogoClick={handleLogoClick} />
 
       <div className="flex-1 flex flex-col overflow-hidden relative z-[2]">
         <div className="px-5 py-4 bg-background/75 border-b border-border flex items-center gap-2.5">
@@ -138,29 +128,20 @@ export default function Index() {
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-tx3" />
             <input
               className="w-full border border-border rounded-lg py-[7px] pl-9 pr-3 text-[13px] bg-foreground/[0.04] text-foreground placeholder:text-tx3 focus:outline-none focus:border-primary transition-colors"
-              placeholder="Zoek boeken…"
+              placeholder="Zoek boeken… (probeer 'party' 😉)"
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={e => handleSearchChange(e.target.value)}
             />
           </div>
-          <button
-            onClick={() => fileRef.current?.click()}
-            className="text-[11px] px-3 py-[7px] rounded-lg bg-primary text-primary-foreground font-medium hover:bg-or-dark transition-all"
-          >
-            + Boek toevoegen
-          </button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".pdf,.epub"
-            multiple
-            className="hidden"
-            onChange={e => { if (e.target.files) { handleFiles(e.target.files); e.target.value = ''; } }}
-          />
+          <button onClick={() => fileRef.current?.click()} className="text-[11px] px-3 py-[7px] rounded-lg bg-primary text-primary-foreground font-medium hover:bg-or-dark transition-all">+ Boek toevoegen</button>
+          <button onClick={signOut} className="text-[11px] px-2 py-[7px] text-tx2 hover:text-foreground transition-colors" title="Uitloggen"><LogOut size={14} /></button>
+          <input ref={fileRef} type="file" accept=".pdf,.epub" multiple className="hidden" onChange={e => { if (e.target.files) { handleFiles(e.target.files); e.target.value = ''; } }} />
         </div>
 
         <div className="flex-1 p-5 overflow-y-auto">
-          {page === 'home' && (
+          {booksLoading ? (
+            <div className="text-center p-8 text-tx3 text-sm">Boeken laden…</div>
+          ) : page === 'home' ? (
             <>
               {books.length > 0 && (
                 <div className="grid grid-cols-3 gap-2.5 mb-6">
@@ -191,52 +172,40 @@ export default function Index() {
               )}
               {filtered.length > 0 && (
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3.5">
-                  {filtered.map(book => (
-                    <BookCard key={book.id} book={book} onOpen={setViewing} onDelete={handleDelete} />
-                  ))}
+                  {filtered.map(book => <BookCard key={book.id} book={book} onOpen={setViewing} onDelete={handleDelete} />)}
                 </div>
               )}
             </>
-          )}
-
-          {page === 'reading' && (
+          ) : page === 'reading' ? (
             <>
               <div className="text-[15px] font-medium text-foreground mb-3">Aan het lezen</div>
               {readingBooks.length === 0 ? (
                 <div className="text-[13px] text-tx3 text-center p-8">Geen boeken in voortgang</div>
               ) : (
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3.5">
-                  {readingBooks.map(book => (
-                    <BookCard key={book.id} book={book} onOpen={setViewing} onDelete={handleDelete} />
-                  ))}
+                  {readingBooks.map(book => <BookCard key={book.id} book={book} onOpen={setViewing} onDelete={handleDelete} />)}
                 </div>
               )}
             </>
-          )}
-
-          {page === 'catalog' && (
+          ) : (
             <>
               <div className="text-[15px] font-medium text-foreground mb-3">Catalogus</div>
               {filtered.length === 0 ? (
                 <div className="text-[13px] text-tx3 text-center p-8">Geen boeken gevonden</div>
-              ) : (
-                years.map(year => {
-                  const yearBooks = catalogByYear.filter(b => (b.year || 0) === year);
-                  return (
-                    <div key={year} className="mb-6">
-                      <div className="text-[13px] font-medium text-tx2 mb-2 flex items-center gap-2">
-                        <span className="text-primary">{year || 'Onbekend jaar'}</span>
-                        <span className="text-tx3">— {yearBooks.length} boek{yearBooks.length !== 1 ? 'en' : ''}</span>
-                      </div>
-                      <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3.5">
-                        {yearBooks.map(book => (
-                          <BookCard key={book.id} book={book} onOpen={setViewing} onDelete={handleDelete} />
-                        ))}
-                      </div>
+              ) : years.map(year => {
+                const yearBooks = catalogByYear.filter(b => (b.year || 0) === year);
+                return (
+                  <div key={year} className="mb-6">
+                    <div className="text-[13px] font-medium text-tx2 mb-2 flex items-center gap-2">
+                      <span className="text-primary">{year || 'Onbekend jaar'}</span>
+                      <span className="text-tx3">— {yearBooks.length} boek{yearBooks.length !== 1 ? 'en' : ''}</span>
                     </div>
-                  );
-                })
-              )}
+                    <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3.5">
+                      {yearBooks.map(book => <BookCard key={book.id} book={book} onOpen={setViewing} onDelete={handleDelete} />)}
+                    </div>
+                  </div>
+                );
+              })}
             </>
           )}
         </div>
@@ -248,19 +217,10 @@ export default function Index() {
       {viewing && viewing.type === 'epub' && (
         <EpubViewer book={viewing} onClose={() => setViewing(null)} />
       )}
-
       {uploadQueue.length > 0 && (
-        <UploadDialog
-          file={uploadQueue[0].file}
-          base64={uploadQueue[0].base64}
-          onConfirm={handleUploadConfirm}
-          onCancel={handleUploadCancel}
-        />
+        <UploadDialog file={uploadQueue[0].file} base64={uploadQueue[0].base64} onConfirm={handleUploadConfirm} onCancel={handleUploadCancel} />
       )}
-
-      <div className={`absolute bottom-4 right-4 bg-primary text-primary-foreground px-3.5 py-2 rounded-lg text-[13px] font-medium z-30 transition-opacity ${toast ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-        {toast}
-      </div>
+      <div className={`absolute bottom-4 right-4 bg-primary text-primary-foreground px-3.5 py-2 rounded-lg text-[13px] font-medium z-30 transition-opacity ${toast ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>{toast}</div>
     </div>
   );
 }

@@ -6,9 +6,10 @@ interface SidebarProps {
   storageSize: string;
   theme: 'dark' | 'light';
   onThemeChange: (theme: 'dark' | 'light') => void;
+  onLogoClick?: () => void;
 }
 
-export default function Sidebar({ page, onPageChange, storageSize, theme, onThemeChange }: SidebarProps) {
+export default function Sidebar({ page, onPageChange, storageSize, theme, onThemeChange, onLogoClick }: SidebarProps) {
   const navItems: { id: 'home' | 'reading' | 'catalog'; icon: typeof LayoutGrid; label: string }[] = [
     { id: 'home', icon: LayoutGrid, label: 'Bibliotheek' },
     { id: 'reading', icon: Clock, label: 'Aan het lezen' },
@@ -17,7 +18,10 @@ export default function Sidebar({ page, onPageChange, storageSize, theme, onThem
 
   return (
     <div className="w-[200px] bg-background/90 border-r border-border p-4 flex flex-col gap-0.5 shrink-0 z-[2] relative">
-      <div className="text-[17px] font-medium text-foreground mb-4 flex items-center gap-2">
+      <div
+        className="text-[17px] font-medium text-foreground mb-4 flex items-center gap-2 cursor-pointer select-none"
+        onClick={onLogoClick}
+      >
         <div className="w-[26px] h-[26px] bg-primary rounded-md flex items-center justify-center">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <rect x="1" y="1" width="7" height="10" rx="1" fill="black" opacity="0.9" />
