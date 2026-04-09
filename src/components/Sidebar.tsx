@@ -1,14 +1,20 @@
-import { LayoutGrid, Clock, Sun, Moon } from "lucide-react";
+import { LayoutGrid, Clock, Sun, Moon, Library } from "lucide-react";
 
 interface SidebarProps {
-  page: 'home' | 'reading';
-  onPageChange: (page: 'home' | 'reading') => void;
+  page: 'home' | 'reading' | 'catalog';
+  onPageChange: (page: 'home' | 'reading' | 'catalog') => void;
   storageSize: string;
   theme: 'dark' | 'light';
   onThemeChange: (theme: 'dark' | 'light') => void;
 }
 
 export default function Sidebar({ page, onPageChange, storageSize, theme, onThemeChange }: SidebarProps) {
+  const navItems: { id: 'home' | 'reading' | 'catalog'; icon: typeof LayoutGrid; label: string }[] = [
+    { id: 'home', icon: LayoutGrid, label: 'Bibliotheek' },
+    { id: 'reading', icon: Clock, label: 'Aan het lezen' },
+    { id: 'catalog', icon: Library, label: 'Catalogus' },
+  ];
+
   return (
     <div className="w-[200px] bg-background/90 border-r border-border p-4 flex flex-col gap-0.5 shrink-0 z-[2] relative">
       <div className="text-[17px] font-medium text-foreground mb-4 flex items-center gap-2">
@@ -21,26 +27,19 @@ export default function Sidebar({ page, onPageChange, storageSize, theme, onThem
         Readify
       </div>
 
-      <button
-        onClick={() => onPageChange('home')}
-        className={`flex items-center gap-[9px] py-[7px] px-[9px] rounded-lg text-[13px] transition-all cursor-pointer ${
-          page === 'home'
-            ? 'bg-primary/15 text-primary font-medium'
-            : 'text-tx2 hover:bg-primary/10 hover:text-foreground'
-        }`}
-      >
-        <LayoutGrid size={14} /> Bibliotheek
-      </button>
-      <button
-        onClick={() => onPageChange('reading')}
-        className={`flex items-center gap-[9px] py-[7px] px-[9px] rounded-lg text-[13px] transition-all cursor-pointer ${
-          page === 'reading'
-            ? 'bg-primary/15 text-primary font-medium'
-            : 'text-tx2 hover:bg-primary/10 hover:text-foreground'
-        }`}
-      >
-        <Clock size={14} /> Aan het lezen
-      </button>
+      {navItems.map(item => (
+        <button
+          key={item.id}
+          onClick={() => onPageChange(item.id)}
+          className={`flex items-center gap-[9px] py-[7px] px-[9px] rounded-lg text-[13px] transition-all cursor-pointer ${
+            page === item.id
+              ? 'bg-primary/15 text-primary font-medium'
+              : 'text-tx2 hover:bg-primary/10 hover:text-foreground'
+          }`}
+        >
+          <item.icon size={14} /> {item.label}
+        </button>
+      ))}
 
       <div className="mt-auto flex flex-col gap-2 px-[9px] py-2">
         <button
