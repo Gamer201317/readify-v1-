@@ -1,5 +1,5 @@
-import { useState, useCallback, useRef, useEffect } from "react";
-import { Navigate } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
+import { Link } from "react-router-dom";
 import Sidebar from "@/components/Sidebar";
 import DropZone from "@/components/DropZone";
 import BookCard from "@/components/BookCard";
@@ -7,11 +7,10 @@ import PdfViewer from "@/components/PdfViewer";
 import EpubViewer from "@/components/EpubViewer";
 import UploadDialog from "@/components/UploadDialog";
 import EasterEggOverlay from "@/components/EasterEggOverlay";
-import { useAuth } from "@/hooks/useAuth";
 import { useBooks, type Book } from "@/hooks/useBooks";
 import { useEasterEggs } from "@/hooks/useEasterEggs";
 import { fileToBase64, getTheme, setTheme as saveThemeToStorage } from "@/lib/bookStore";
-import { Search, LogOut } from "lucide-react";
+import { Search, Home } from "lucide-react";
 
 const GRADS: [string, string][] = [
   ['#C2500A', '#F97316'], ['#7C3AED', '#A78BFA'], ['#059669', '#34D399'],
