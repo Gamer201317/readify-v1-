@@ -23,7 +23,6 @@ function randomGrad(): [string, string] {
 }
 
 export default function Index() {
-  const { user, loading: authLoading, signOut } = useAuth();
   const { books, loading: booksLoading, addBook, deleteBook, updateBook } = useBooks();
   const { effect, handleLogoClick, checkSearchCommand } = useEasterEggs();
 
@@ -38,11 +37,6 @@ export default function Index() {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
-
-  if (authLoading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center"><div className="text-tx3 text-sm">Laden…</div></div>;
-  }
-  if (!user) return <Navigate to="/auth" replace />;
 
   const handleThemeChange = (t: 'dark' | 'light') => { setThemeState(t); saveThemeToStorage(t); };
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 2500); };
