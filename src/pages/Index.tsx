@@ -127,7 +127,7 @@ export default function Index() {
             />
           </div>
           <button onClick={() => fileRef.current?.click()} className="text-[11px] px-3 py-[7px] rounded-lg bg-primary text-primary-foreground font-medium hover:bg-or-dark transition-all">+ Boek toevoegen</button>
-          <button onClick={signOut} className="text-[11px] px-2 py-[7px] text-tx2 hover:text-foreground transition-colors" title="Uitloggen"><LogOut size={14} /></button>
+          <Link to="/" className="text-[11px] px-2 py-[7px] text-tx2 hover:text-foreground transition-colors flex items-center" title="Naar startpagina"><Home size={14} /></Link>
           <input ref={fileRef} type="file" accept=".pdf,.epub" multiple className="hidden" onChange={e => { if (e.target.files) { handleFiles(e.target.files); e.target.value = ''; } }} />
         </div>
 
