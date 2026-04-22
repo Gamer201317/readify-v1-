@@ -1,5 +1,5 @@
-import { useState, useCallback, useRef, useEffect } from "react";
-import { Navigate } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
+import { Link } from "react-router-dom";
 import Sidebar from "@/components/Sidebar";
 import DropZone from "@/components/DropZone";
 import BookCard from "@/components/BookCard";
@@ -7,11 +7,10 @@ import PdfViewer from "@/components/PdfViewer";
 import EpubViewer from "@/components/EpubViewer";
 import UploadDialog from "@/components/UploadDialog";
 import EasterEggOverlay from "@/components/EasterEggOverlay";
-import { useAuth } from "@/hooks/useAuth";
 import { useBooks, type Book } from "@/hooks/useBooks";
 import { useEasterEggs } from "@/hooks/useEasterEggs";
 import { fileToBase64, getTheme, setTheme as saveThemeToStorage } from "@/lib/bookStore";
-import { Search, LogOut } from "lucide-react";
+import { Search, Home } from "lucide-react";
 
 const GRADS: [string, string][] = [
   ['#C2500A', '#F97316'], ['#7C3AED', '#A78BFA'], ['#059669', '#34D399'],
@@ -24,7 +23,6 @@ function randomGrad(): [string, string] {
 }
 
 export default function Index() {
-  const { user, loading: authLoading, signOut } = useAuth();
   const { books, loading: booksLoading, addBook, deleteBook, updateBook } = useBooks();
   const { effect, handleLogoClick, checkSearchCommand } = useEasterEggs();
 
@@ -39,11 +37,6 @@ export default function Index() {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
-
-  if (authLoading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center"><div className="text-tx3 text-sm">Laden…</div></div>;
-  }
-  if (!user) return <Navigate to="/auth" replace />;
 
   const handleThemeChange = (t: 'dark' | 'light') => { setThemeState(t); saveThemeToStorage(t); };
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 2500); };
@@ -134,7 +127,7 @@ export default function Index() {
             />
           </div>
           <button onClick={() => fileRef.current?.click()} className="text-[11px] px-3 py-[7px] rounded-lg bg-primary text-primary-foreground font-medium hover:bg-or-dark transition-all">+ Boek toevoegen</button>
-          <button onClick={signOut} className="text-[11px] px-2 py-[7px] text-tx2 hover:text-foreground transition-colors" title="Uitloggen"><LogOut size={14} /></button>
+          <Link to="/" className="text-[11px] px-2 py-[7px] text-tx2 hover:text-foreground transition-colors flex items-center" title="Naar startpagina"><Home size={14} /></Link>
           <input ref={fileRef} type="file" accept=".pdf,.epub" multiple className="hidden" onChange={e => { if (e.target.files) { handleFiles(e.target.files); e.target.value = ''; } }} />
         </div>
 
