@@ -7,9 +7,10 @@ import PdfViewer from "@/components/PdfViewer";
 import EpubViewer from "@/components/EpubViewer";
 import UploadDialog from "@/components/UploadDialog";
 import EasterEggOverlay from "@/components/EasterEggOverlay";
-import { useBooks, type Book } from "@/hooks/useBooks";
+import { useBooks, type Book, type Highlight, type ReaderSettings } from "@/hooks/useBooks";
 import { useEasterEggs } from "@/hooks/useEasterEggs";
 import { fileToBase64, getTheme, setTheme as saveThemeToStorage } from "@/lib/bookStore";
+import { exportLibrary, importLibrary } from "@/lib/libraryBackup";
 import { Search, Home } from "lucide-react";
 
 const GRADS: [string, string][] = [
@@ -98,6 +99,38 @@ export default function Index() {
     showToast('Bladwijzer verwijderd');
   };
 
+  const handleHighlightsChange = async (highlights: Highlight[]) => {
+    if (!viewing) return;
+    const updated = await updateBook(viewing.id, { highlights });
+    if (updated) setViewing(updated);
+  };
+
+  const handleSettingsChange = async (readerSettings: ReaderSettings) => {
+    if (!viewing) return;
+    const updated = await updateBook(viewing.id, { readerSettings });
+    if (updated) setViewing(updated);
+  };
+
+  const handleExport = async () => {
+    try {
+      await exportLibrary();
+      showToast('Back-up gedownload');
+    } catch {
+      showToast('Export mislukt');
+    }
+  };
+
+  const handleImport = async (file: File) => {
+    try {
+      const res = await importLibrary(file, 'merge');
+      showToast(`${res.imported} boeken geïmporteerd${res.skipped ? `, ${res.skipped} overgeslagen` : ''}`);
+      // refresh by reloading (simplest)
+      window.location.reload();
+    } catch (e: any) {
+      showToast('Import mislukt: ' + (e?.message || 'ongeldig bestand'));
+    }
+  };
+
   const handleSearchChange = (val: string) => {
     setSearch(val);
     checkSearchCommand(val);
@@ -113,7 +146,7 @@ export default function Index() {
   return (
     <div className="flex min-h-screen bg-background font-sans relative overflow-hidden">
       <EasterEggOverlay effect={effect} />
-      <Sidebar page={page} onPageChange={setPage} storageSize={sizeStr} theme={theme} onThemeChange={handleThemeChange} onLogoClick={handleLogoClick} />
+      <Sidebar page={page} onPageChange={setPage} storageSize={sizeStr} theme={theme} onThemeChange={handleThemeChange} onLogoClick={handleLogoClick} onExport={handleExport} onImport={handleImport} />
 
       <div className="flex-1 flex flex-col overflow-hidden relative z-[2]">
         <div className="px-5 py-4 bg-background/75 border-b border-border flex items-center gap-2.5">
@@ -205,10 +238,10 @@ export default function Index() {
       </div>
 
       {viewing && viewing.type === 'pdf' && (
-        <PdfViewer book={viewing} onClose={() => setViewing(null)} onProgress={handleProgress} onBookmark={handleBookmark} onRemoveBookmark={handleRemoveBookmark} />
+        <PdfViewer book={viewing} onClose={() => setViewing(null)} onProgress={handleProgress} onBookmark={handleBookmark} onRemoveBookmark={handleRemoveBookmark} onHighlightsChange={handleHighlightsChange} />
       )}
       {viewing && viewing.type === 'epub' && (
-        <EpubViewer book={viewing} onClose={() => setViewing(null)} />
+        <EpubViewer book={viewing} onClose={() => setViewing(null)} onHighlightsChange={handleHighlightsChange} onSettingsChange={handleSettingsChange} />
       )}
       {uploadQueue.length > 0 && (
         <UploadDialog file={uploadQueue[0].file} base64={uploadQueue[0].base64} onConfirm={handleUploadConfirm} onCancel={handleUploadCancel} />

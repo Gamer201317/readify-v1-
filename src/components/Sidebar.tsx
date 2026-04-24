@@ -1,4 +1,5 @@
-import { LayoutGrid, Clock, Sun, Moon, Library } from "lucide-react";
+import { useRef } from "react";
+import { LayoutGrid, Clock, Sun, Moon, Library, Download, Upload } from "lucide-react";
 
 interface SidebarProps {
   page: 'home' | 'reading' | 'catalog';
@@ -7,9 +8,12 @@ interface SidebarProps {
   theme: 'dark' | 'light';
   onThemeChange: (theme: 'dark' | 'light') => void;
   onLogoClick?: () => void;
+  onExport?: () => void;
+  onImport?: (file: File) => void;
 }
 
-export default function Sidebar({ page, onPageChange, storageSize, theme, onThemeChange, onLogoClick }: SidebarProps) {
+export default function Sidebar({ page, onPageChange, storageSize, theme, onThemeChange, onLogoClick, onExport, onImport }: SidebarProps) {
+  const importRef = useRef<HTMLInputElement>(null);
   const navItems: { id: 'home' | 'reading' | 'catalog'; icon: typeof LayoutGrid; label: string }[] = [
     { id: 'home', icon: LayoutGrid, label: 'Bibliotheek' },
     { id: 'reading', icon: Clock, label: 'Aan het lezen' },
@@ -46,6 +50,29 @@ export default function Sidebar({ page, onPageChange, storageSize, theme, onThem
       ))}
 
       <div className="mt-auto flex flex-col gap-2 px-[9px] py-2">
+        {onExport && (
+          <button onClick={onExport} className="flex items-center gap-2 text-[11px] text-tx2 hover:text-foreground transition-colors py-1" title="Back-up downloaden">
+            <Download size={13} /> Exporteer bibliotheek
+          </button>
+        )}
+        {onImport && (
+          <>
+            <button onClick={() => importRef.current?.click()} className="flex items-center gap-2 text-[11px] text-tx2 hover:text-foreground transition-colors py-1" title="Back-up importeren">
+              <Upload size={13} /> Importeer back-up
+            </button>
+            <input
+              ref={importRef}
+              type="file"
+              accept=".json,application/json"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) onImport(f);
+                e.target.value = '';
+              }}
+            />
+          </>
+        )}
         <button
           onClick={() => onThemeChange(theme === 'dark' ? 'light' : 'dark')}
           className="flex items-center gap-2 text-[11px] text-tx2 hover:text-foreground transition-colors py-1"
