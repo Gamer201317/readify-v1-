@@ -8,6 +8,22 @@ export interface Bookmark {
   createdAt: number;
 }
 
+export interface Highlight {
+  id: string;
+  page?: number;      // pdf
+  cfi?: string;       // epub
+  text: string;
+  color: 'yellow' | 'orange' | 'green' | 'blue';
+  note?: string;
+  createdAt: number;
+}
+
+export interface ReaderSettings {
+  fontSize?: number;         // 80-160 (percentage)
+  lineHeight?: number;       // 1.2-2.2
+  theme?: 'default' | 'sepia' | 'dark';
+}
+
 export interface Book {
   id: string;
   name: string;
@@ -17,6 +33,8 @@ export interface Book {
   coverGradient: [string, string];
   coverImage?: string;
   bookmarks: Bookmark[];
+  highlights?: Highlight[];
+  readerSettings?: ReaderSettings;
   year?: number;
   genre?: string;
   author?: string;
