@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import type { Book, Bookmark, Highlight } from "@/hooks/useBooks";
+import { useSessionTracker } from "@/hooks/useSessionTracker";
 import {
   Bookmark as BookmarkIcon,
   BookmarkCheck,
