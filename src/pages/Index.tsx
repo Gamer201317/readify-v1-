@@ -99,6 +99,38 @@ export default function Index() {
     showToast('Bladwijzer verwijderd');
   };
 
+  const handleHighlightsChange = async (highlights: Highlight[]) => {
+    if (!viewing) return;
+    const updated = await updateBook(viewing.id, { highlights });
+    if (updated) setViewing(updated);
+  };
+
+  const handleSettingsChange = async (readerSettings: ReaderSettings) => {
+    if (!viewing) return;
+    const updated = await updateBook(viewing.id, { readerSettings });
+    if (updated) setViewing(updated);
+  };
+
+  const handleExport = async () => {
+    try {
+      await exportLibrary();
+      showToast('Back-up gedownload');
+    } catch {
+      showToast('Export mislukt');
+    }
+  };
+
+  const handleImport = async (file: File) => {
+    try {
+      const res = await importLibrary(file, 'merge');
+      showToast(`${res.imported} boeken geïmporteerd${res.skipped ? `, ${res.skipped} overgeslagen` : ''}`);
+      // refresh by reloading (simplest)
+      window.location.reload();
+    } catch (e: any) {
+      showToast('Import mislukt: ' + (e?.message || 'ongeldig bestand'));
+    }
+  };
+
   const handleSearchChange = (val: string) => {
     setSearch(val);
     checkSearchCommand(val);
