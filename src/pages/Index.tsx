@@ -7,9 +7,10 @@ import PdfViewer from "@/components/PdfViewer";
 import EpubViewer from "@/components/EpubViewer";
 import UploadDialog from "@/components/UploadDialog";
 import EasterEggOverlay from "@/components/EasterEggOverlay";
-import { useBooks, type Book } from "@/hooks/useBooks";
+import { useBooks, type Book, type Highlight, type ReaderSettings } from "@/hooks/useBooks";
 import { useEasterEggs } from "@/hooks/useEasterEggs";
 import { fileToBase64, getTheme, setTheme as saveThemeToStorage } from "@/lib/bookStore";
+import { exportLibrary, importLibrary } from "@/lib/libraryBackup";
 import { Search, Home } from "lucide-react";
 
 const GRADS: [string, string][] = [
