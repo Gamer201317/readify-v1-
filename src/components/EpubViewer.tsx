@@ -95,6 +95,10 @@ export default function EpubViewer({ book, onClose, onHighlightsChange, onSettin
         });
       });
 
+      rendition.on("relocated", () => {
+        setPageCounter((p) => p + 1);
+      });
+
       rendition.display();
       setLoading(false);
 
