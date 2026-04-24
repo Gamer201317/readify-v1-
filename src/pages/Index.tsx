@@ -28,7 +28,7 @@ export default function Index() {
   const { books, loading: booksLoading, addBook, deleteBook, updateBook } = useBooks();
   const { effect, handleLogoClick, checkSearchCommand } = useEasterEggs();
 
-  const [page, setPage] = useState<'home' | 'reading' | 'catalog'>('home');
+  const [page, setPage] = useState<'home' | 'reading' | 'catalog' | 'stats'>('home');
   const [search, setSearch] = useState('');
   const [viewing, setViewing] = useState<Book | null>(null);
   const [toast, setToast] = useState('');
