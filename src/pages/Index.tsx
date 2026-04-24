@@ -7,6 +7,7 @@ import PdfViewer from "@/components/PdfViewer";
 import EpubViewer from "@/components/EpubViewer";
 import UploadDialog from "@/components/UploadDialog";
 import EasterEggOverlay from "@/components/EasterEggOverlay";
+import StatsPage from "@/components/StatsPage";
 import { useBooks, type Book, type Highlight, type ReaderSettings } from "@/hooks/useBooks";
 import { useEasterEggs } from "@/hooks/useEasterEggs";
 import { fileToBase64, getTheme, setTheme as saveThemeToStorage } from "@/lib/bookStore";
