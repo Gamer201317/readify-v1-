@@ -7,6 +7,7 @@ import PdfViewer from "@/components/PdfViewer";
 import EpubViewer from "@/components/EpubViewer";
 import UploadDialog from "@/components/UploadDialog";
 import EasterEggOverlay from "@/components/EasterEggOverlay";
+import StatsPage from "@/components/StatsPage";
 import { useBooks, type Book, type Highlight, type ReaderSettings } from "@/hooks/useBooks";
 import { useEasterEggs } from "@/hooks/useEasterEggs";
 import { fileToBase64, getTheme, setTheme as saveThemeToStorage } from "@/lib/bookStore";
@@ -27,7 +28,7 @@ export default function Index() {
   const { books, loading: booksLoading, addBook, deleteBook, updateBook } = useBooks();
   const { effect, handleLogoClick, checkSearchCommand } = useEasterEggs();
 
-  const [page, setPage] = useState<'home' | 'reading' | 'catalog'>('home');
+  const [page, setPage] = useState<'home' | 'reading' | 'catalog' | 'stats'>('home');
   const [search, setSearch] = useState('');
   const [viewing, setViewing] = useState<Book | null>(null);
   const [toast, setToast] = useState('');
@@ -213,6 +214,8 @@ export default function Index() {
                 </div>
               )}
             </>
+          ) : page === 'stats' ? (
+            <StatsPage />
           ) : (
             <>
               <div className="text-[15px] font-medium text-foreground mb-3">Catalogus</div>

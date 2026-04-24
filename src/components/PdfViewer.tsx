@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import type { Book, Bookmark, Highlight } from "@/hooks/useBooks";
+import { useSessionTracker } from "@/hooks/useSessionTracker";
 import {
   Bookmark as BookmarkIcon,
   BookmarkCheck,
@@ -62,6 +63,8 @@ export default function PdfViewer({
   const highlights = book.highlights || [];
   const currentBookmark = book.bookmarks?.find((b) => b.page === page);
   const progress = totalPages > 0 ? Math.round((page / totalPages) * 100) : 0;
+
+  useSessionTracker(book, page);
 
   useEffect(() => {
     const load = async () => {

@@ -1,9 +1,9 @@
 import { useRef } from "react";
-import { LayoutGrid, Clock, Sun, Moon, Library, Download, Upload } from "lucide-react";
+import { LayoutGrid, Clock, Sun, Moon, Library, Download, Upload, BarChart3 } from "lucide-react";
 
 interface SidebarProps {
-  page: 'home' | 'reading' | 'catalog';
-  onPageChange: (page: 'home' | 'reading' | 'catalog') => void;
+  page: 'home' | 'reading' | 'catalog' | 'stats';
+  onPageChange: (page: 'home' | 'reading' | 'catalog' | 'stats') => void;
   storageSize: string;
   theme: 'dark' | 'light';
   onThemeChange: (theme: 'dark' | 'light') => void;
@@ -14,10 +14,11 @@ interface SidebarProps {
 
 export default function Sidebar({ page, onPageChange, storageSize, theme, onThemeChange, onLogoClick, onExport, onImport }: SidebarProps) {
   const importRef = useRef<HTMLInputElement>(null);
-  const navItems: { id: 'home' | 'reading' | 'catalog'; icon: typeof LayoutGrid; label: string }[] = [
+  const navItems: { id: 'home' | 'reading' | 'catalog' | 'stats'; icon: typeof LayoutGrid; label: string }[] = [
     { id: 'home', icon: LayoutGrid, label: 'Bibliotheek' },
     { id: 'reading', icon: Clock, label: 'Aan het lezen' },
     { id: 'catalog', icon: Library, label: 'Catalogus' },
+    { id: 'stats', icon: BarChart3, label: 'Statistieken' },
   ];
 
   return (

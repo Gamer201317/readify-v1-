@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import ePub from "epubjs";
 import type { Book as BookType, Highlight, ReaderSettings } from "@/hooks/useBooks";
+import { useSessionTracker } from "@/hooks/useSessionTracker";
 import { Search, X, Highlighter, StickyNote, Trash2, Settings2 } from "lucide-react";
 
 interface EpubViewerProps {
@@ -42,6 +43,9 @@ export default function EpubViewer({ book, onClose, onHighlightsChange, onSettin
   const [searching, setSearching] = useState(false);
   const [noteFor, setNoteFor] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
+  const [pageCounter, setPageCounter] = useState(1);
+
+  useSessionTracker(book, pageCounter);
 
   const settings: ReaderSettings = {
     fontSize: book.readerSettings?.fontSize ?? 100,
@@ -89,6 +93,10 @@ export default function EpubViewer({ book, onClose, onHighlightsChange, onSettin
             );
           } catch {}
         });
+      });
+
+      rendition.on("relocated", () => {
+        setPageCounter((p) => p + 1);
       });
 
       rendition.display();
