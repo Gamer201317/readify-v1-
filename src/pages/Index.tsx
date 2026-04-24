@@ -146,7 +146,7 @@ export default function Index() {
   return (
     <div className="flex min-h-screen bg-background font-sans relative overflow-hidden">
       <EasterEggOverlay effect={effect} />
-      <Sidebar page={page} onPageChange={setPage} storageSize={sizeStr} theme={theme} onThemeChange={handleThemeChange} onLogoClick={handleLogoClick} />
+      <Sidebar page={page} onPageChange={setPage} storageSize={sizeStr} theme={theme} onThemeChange={handleThemeChange} onLogoClick={handleLogoClick} onExport={handleExport} onImport={handleImport} />
 
       <div className="flex-1 flex flex-col overflow-hidden relative z-[2]">
         <div className="px-5 py-4 bg-background/75 border-b border-border flex items-center gap-2.5">
