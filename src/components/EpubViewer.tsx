@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import ePub from "epubjs";
 import type { Book as BookType, Highlight, ReaderSettings } from "@/hooks/useBooks";
+import { useSessionTracker } from "@/hooks/useSessionTracker";
 import { Search, X, Highlighter, StickyNote, Trash2, Settings2 } from "lucide-react";
 
 interface EpubViewerProps {
