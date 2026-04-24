@@ -64,6 +64,8 @@ export default function PdfViewer({
   const currentBookmark = book.bookmarks?.find((b) => b.page === page);
   const progress = totalPages > 0 ? Math.round((page / totalPages) * 100) : 0;
 
+  useSessionTracker(book, page);
+
   useEffect(() => {
     const load = async () => {
       const data = atob(book.data.split(",")[1]);
