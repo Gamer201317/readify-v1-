@@ -43,6 +43,9 @@ export default function EpubViewer({ book, onClose, onHighlightsChange, onSettin
   const [searching, setSearching] = useState(false);
   const [noteFor, setNoteFor] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
+  const [pageCounter, setPageCounter] = useState(1);
+
+  useSessionTracker(book, pageCounter);
 
   const settings: ReaderSettings = {
     fontSize: book.readerSettings?.fontSize ?? 100,
