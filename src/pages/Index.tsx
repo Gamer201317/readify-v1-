@@ -214,6 +214,8 @@ export default function Index() {
                 </div>
               )}
             </>
+          ) : page === 'stats' ? (
+            <StatsPage />
           ) : (
             <>
               <div className="text-[15px] font-medium text-foreground mb-3">Catalogus</div>
