@@ -238,10 +238,10 @@ export default function Index() {
       </div>
 
       {viewing && viewing.type === 'pdf' && (
-        <PdfViewer book={viewing} onClose={() => setViewing(null)} onProgress={handleProgress} onBookmark={handleBookmark} onRemoveBookmark={handleRemoveBookmark} />
+        <PdfViewer book={viewing} onClose={() => setViewing(null)} onProgress={handleProgress} onBookmark={handleBookmark} onRemoveBookmark={handleRemoveBookmark} onHighlightsChange={handleHighlightsChange} />
       )}
       {viewing && viewing.type === 'epub' && (
-        <EpubViewer book={viewing} onClose={() => setViewing(null)} />
+        <EpubViewer book={viewing} onClose={() => setViewing(null)} onHighlightsChange={handleHighlightsChange} onSettingsChange={handleSettingsChange} />
       )}
       {uploadQueue.length > 0 && (
         <UploadDialog file={uploadQueue[0].file} base64={uploadQueue[0].base64} onConfirm={handleUploadConfirm} onCancel={handleUploadCancel} />
