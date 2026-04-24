@@ -85,6 +85,7 @@ export function useBooks() {
 
   const updateBook = async (id: string, updates: Partial<{
     currentPage: number; totalPages: number; bookmarks: Bookmark[];
+    highlights: Highlight[]; readerSettings: ReaderSettings;
   }>) => {
     const existing = await get<Book>(KEY_PREFIX + id);
     if (!existing) return null;
